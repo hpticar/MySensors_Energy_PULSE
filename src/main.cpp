@@ -42,10 +42,10 @@ MyMessage pcMsg(CHILD_ID, V_VAR1);
 
 void IRQ_HANDLER_ATTR onPulse()
 {
-    Serial.print("x");
-
     uint32_t newBlinkmillis = millis();
     uint32_t intervalmillis = 0;
+
+    //Serial.print("x");
 
     // millis will loop over and start again from 0 at 2^32
     if (newBlinkmillis > lastBlinkmillis){
