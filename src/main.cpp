@@ -28,7 +28,6 @@ uint32_t SEND_FREQUENCY = 5000; // Minimum time between send (in milliseconds). 
 double ppwh = ((double)PULSE_FACTOR) / 1000; // Pulses per watt hour
 bool pcReceived = false;
 volatile uint32_t pulseCount = 0;
-volatile uint32_t lastBlinkmicros = 0;
 volatile uint32_t lastBlinkmillis = 0;
 volatile uint32_t watt = 0;
 uint32_t oldPulseCount = 0;
@@ -44,20 +43,18 @@ MyMessage pcMsg(CHILD_ID, V_VAR1);
 void IRQ_HANDLER_ATTR onPulse()
 {
     Serial.print("x");
-    uint32_t newBlinkmicros = micros();
+
     uint32_t newBlinkmillis = millis();
-    uint32_t intervalmicros = newBlinkmicros - lastBlinkmicros;
-    uint32_t intervalmillis = newBlinkmillis - lastBlinkmillis;
-    if (intervalmicros < 10000L && intervalmillis < 10L) { // Sometimes we get interrupt on RISING
-        return;
-    }
-    if (intervalmillis < 360000) { // Less than an hour since last pulse, use microseconds
-        watt = (3600000000.0 / intervalmicros) / ppwh;
+    uint32_t intervalmillis = 0;
+
+    // millis will loop over and start again from 0 at 2^32
+    if (newBlinkmillis > lastBlinkmillis){
+        intervalmillis = newBlinkmillis - lastBlinkmillis;
     } else {
-        watt = (3600000.0 / intervalmillis) /
-                ppwh; // more than an hour since last pulse, use milliseconds as micros will overflow after 70min
+        intervalmillis = (4294967295 - lastBlinkmillis) + newBlinkmillis;
     }
-    lastBlinkmicros = newBlinkmicros;
+  
+    watt = (3600000.0 / intervalmillis) / ppwh;
     lastBlinkmillis = newBlinkmillis;
 
     pulseCount++;
